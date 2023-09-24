@@ -16,6 +16,8 @@ public class BolaController : MonoBehaviour
     [SerializeField]
     private float drag = 5f;
     [SerializeField]
+    private ForceMode modoDrag = ForceMode.Acceleration;
+    [SerializeField]
     [Range(0f, 0.3f)] private float suavizadoDeRotacion;
 
     [Header("Variables de salto")]
@@ -121,30 +123,35 @@ public class BolaController : MonoBehaviour
         // Si la está sobre terreno no inclinado, limitamos la velocidad.
         // Esto sería un intento de imitación del drag del rigidbody
         // El drag del rigidbody también afecta a la gravedad, y yo no quiero eso
-        if (!sobreInclinacion && estaEnPiso() && rb.velocity.magnitude > 0)
+        if ((sobreInclinacion || !estaEnPiso()) && rb.velocity.magnitude > 0)
         {
-            // Inicializamos el vector velocidadExcedida como el opuesto a la velocidad del rigidbody
-            Vector3 velocidadExcedida = rb.velocity  * - 1;
-
-            // Seteamos el valor de velocidad excedida del eje y en 0 para no afectar a la gravedad
-            velocidadExcedida.y = 0;
-
-            //Multiplicamos la velocidad excedida por esta fracción. El objetivo es
-            // suavizar el efecto de la desacelerada que hará la bola
-            // El denominador nunca será cero porque para eso el deltaTime debe ser 1,
-            // y por su naturaleza es particularmente imposible que suceda.
-            velocidadExcedida *= 1f / (1f - Time.deltaTime * drag);
-            
-            // Aplicamos la aceleración que detendrá a la bola
-            rb.AddForce(velocidadExcedida, ForceMode.Acceleration);
-
-            /*Otros métodos para limitar la velocidad del rigidbody:
-                >>> Vector3.ClampMagnitude
-                >>> Vector3.SmoothDamp
-                >>> Operaciones de resta y suma directas con la velocidad del rigidbody
-                >>> No es recomendable asignarle un nuevo vector al rigidbody
-            */
+            agregarDrag();
         }
+    }
+
+    private void agregarDrag()
+    {
+        // Inicializamos el vector velocidadExcedida como el opuesto a la velocidad del rigidbody
+        Vector3 velocidadExcedida = rb.velocity * -1;
+
+        // Seteamos el valor de velocidad excedida del eje y en 0 para no afectar a la gravedad
+        velocidadExcedida.y = 0;
+
+        //Multiplicamos la velocidad excedida por esta fracción. El objetivo es
+        // suavizar el efecto de la desacelerada que hará la bola
+        // El denominador nunca será cero porque para eso el deltaTime debe ser 1,
+        // y por su naturaleza es particularmente imposible que suceda.
+        velocidadExcedida *= 1f / (1f - Time.deltaTime * drag);
+
+        // Aplicamos la aceleración que detendrá a la bola
+        rb.AddForce(velocidadExcedida, modoDrag);
+
+        /*Otros métodos para limitar la velocidad del rigidbody:
+            >>> Vector3.ClampMagnitude
+            >>> Vector3.SmoothDamp
+            >>> Operaciones de resta y suma directas con la velocidad del rigidbody
+            >>> No es recomendable asignarle un nuevo vector al rigidbody
+        */
     }
 
     private void saltar()
@@ -168,7 +175,7 @@ public class BolaController : MonoBehaviour
         float anguloTerreno = Vector3.Angle(inclinacionTerreno, new Vector3(1, 0, 1));
 
         // Si el ángulo no es 90°, el terreno está inclinado. Añado un margen de 5 grados de tolerancia.
-        sobreInclinacion = (Mathf.Abs(anguloTerreno - 90) > 5);
+        sobreInclinacion = !(Mathf.Abs(anguloTerreno - 90) > 5);
     }
 
     private bool estaEnPiso() 
