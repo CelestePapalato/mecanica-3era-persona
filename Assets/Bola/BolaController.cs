@@ -72,6 +72,12 @@ public class BolaController : MonoBehaviour
 
     private void mover()
     {
+        // Si la bola no está en el piso, no la movemos
+        if (!estaEnPiso())
+        {
+            return;
+        }
+
         // Obtenemos la velocidad de movimiento que debe tener la bola. Si el jugador no se está moviendo,
         // la velocidad es 0; sino, su velocidad es fuerzaDeMovimiento
         float velocidadObjetivo = fuerzaDeMovimiento;
@@ -123,7 +129,7 @@ public class BolaController : MonoBehaviour
         // Si la está sobre terreno no inclinado, limitamos la velocidad.
         // Esto sería un intento de imitación del drag del rigidbody
         // El drag del rigidbody también afecta a la gravedad, y yo no quiero eso
-        if ((sobreInclinacion || !estaEnPiso()) && rb.velocity.magnitude > 0)
+        if (!sobreInclinacion && rb.velocity.magnitude > 0)
         {
             agregarDrag();
         }
@@ -175,7 +181,7 @@ public class BolaController : MonoBehaviour
         float anguloTerreno = Vector3.Angle(inclinacionTerreno, new Vector3(1, 0, 1));
 
         // Si el ángulo no es 90°, el terreno está inclinado. Añado un margen de 5 grados de tolerancia.
-        sobreInclinacion = !(Mathf.Abs(anguloTerreno - 90) > 5);
+        sobreInclinacion = (Mathf.Abs(anguloTerreno - 90) > 5);
     }
 
     private bool estaEnPiso() 
